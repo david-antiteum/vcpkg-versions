@@ -1,6 +1,6 @@
 # vcpck-versions
 
-Utilities to work with selected version of ports files.
+Utilities to work with selected versions of port files.
 
 ## Importer
 
@@ -13,6 +13,24 @@ cd $HOME
 mkdir -p tmp
 git clone https://github.com/microsoft/vcpkg.git
 python importer.py --repository $HOME/tmp/vcpkg --db $HOME/tmp/repo.db
+```
+
+## Query
+
+Look for packages by name.
+
+### Examples
+
+Look for a package using a version:
+
+```shell
+python query.py --db $HOME/tmp/repo.db --pkg boost --pkg-version 1.67.0
+```
+
+Look for packages with a string in the name
+
+```shell
+python query.py --db $HOME/tmp/repo.db --pkg json --like
 ```
 
 ## Generator

@@ -103,7 +103,7 @@ class PortsDB:
 		return versions
 
 	# return a port (by folder name) for a version
-	def port( self, pck, version ):
+	def port( self, pck, version, findDeps = True ):
 		for port in self.ports[ pck ]:
 			if port.version == version:
 				return port
@@ -119,10 +119,11 @@ class PortsDB:
 				port.firstCommit = row[4]
 				port.lastCommit = row[5]
 
-				qd = 'SELECT id, version, id_dep, version_dep FROM dependencies WHERE id=? AND version=?'
-				for rowDeps in cursor.execute( qd, ( pck, version ) ):
-					portDep = self.port( rowDeps[2], rowDeps[3] )
-					port.dependencies.append( portDep )
+				if findDeps:
+					qd = 'SELECT id, version, id_dep, version_dep FROM dependencies WHERE id=? AND version=?'
+					for rowDeps in cursor.execute( qd, ( pck, version ) ):
+						portDep = self.port( rowDeps[2], rowDeps[3], False )
+						port.dependencies.append( portDep )
 				return port
 		
 		return None
@@ -201,3 +202,12 @@ class PortsDB:
 		
 		self.db.close()
 	
+	def packagesLike( self, pckLike ):
+		res = []
+		q = "SELECT DISTINCT id FROM port WHERE id LIKE ?"
+		cursor = self.db.cursor()
+		pckLikeStr = '%{}%'.format( pckLike )
+		for row in cursor.execute( q, ( pckLikeStr, ) ):
+			res.append( row[0] )
+		return res
+
