@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 from vcpckversions import PortsRepo, Port, PortsDB
 
+# Reads a port file
 def readPort( controlFilePath ):
 	port = Port()
 	port.folder = os.path.basename( os.path.dirname( controlFilePath ) )
@@ -18,24 +19,24 @@ def readPort( controlFilePath ):
 			elif values[0].startswith( 'Build-Depends' ):
 				dependencies = set()
 				for depName in values[1].strip().split( ',' ):
-					if len( depName ) > 0:
+					if depName:
 						dependencies.add( depName.strip().split()[0] )
 				port.dependenciesNames |= dependencies
-#				print( "{}: {} -> {} <- {}".format( controlFilePath, port.folder, port.dependenciesNames, dependencies ) )
 
 	return port
 
+# Reads all the port at a commit
 def readPorts( db, folder, commit ):
 	pathlist = Path( os.path.join( folder, "ports" ) ).glob('**/CONTROL')
 	for path in pathlist:
 		port = readPort( str( path ) )
-#		print( "{}: {} -> {}: {}".format( str( path ), port.folder, port.name, port.version) )
 		db.add( port, commit )
 
+# Generates a SQLite database with all the ports in vcpkg repository
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser( description='Build the port versions database.' )
 	parser.add_argument( "--repository", dest="repository", help="folder with a vcpkg cloned repository at master")
-	parser.add_argument( "--db", dest="db", help="SQLite file to update")
+	parser.add_argument( "--db", dest="db", help="SQLite file to generate")
 
 	args = parser.parse_args()
 	if args.repository and args.db:

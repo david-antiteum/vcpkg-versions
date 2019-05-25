@@ -2,6 +2,7 @@ from collections import defaultdict
 import sqlite3
 import subprocess
 
+# VCPKG Repository
 class PortsRepo:
 	def __init__(self, folder ):
 		self.hashes = {}
@@ -9,7 +10,7 @@ class PortsRepo:
 
 	# git log --first-parent master --format=oneline
 	def readHashes( self ):
-		lines = subprocess.check_output(['git', 'log', '--first-parent', 'master', '--format=oneline'], cwd=folder)
+		lines = subprocess.check_output(['git', 'log', '--first-parent', 'master', '--format=oneline'], cwd=self.folder)
 		hashes = list(map(lambda line: line.split()[0].decode('UTF-8'), lines.splitlines() ) )
 		hashes.reverse()
 		self.setHashes( hashes )
@@ -36,6 +37,7 @@ class PortsRepo:
 	def hashBeforeOrAtHash( self, hash, maxHash ):
 		return self.hashPosition( hash ) <= self.hashPosition( maxHash )
 
+# One port
 class Port:
 	def __init__(self):
 		self.folder = ''
@@ -68,6 +70,8 @@ class Port:
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+# In memory port DB (when importing)
+# or using a SQLite DB when generating
 class PortsDB:
 	def __init__(self, repo ):
 		self.ports = defaultdict(list)
@@ -94,7 +98,7 @@ class PortsDB:
 		versions = []
 		for port in self.ports[ pck ]:
 			versions.append( port.version )
-		if len( versions ) == 0 and self.db:
+		if not versions and self.db:
 			cursor = self.db.cursor()
 			q = 'SELECT version FROM port WHERE id=?'
 			for row in cursor.execute( q, (pck,) ):
@@ -143,7 +147,7 @@ class PortsDB:
 				for port in self.ports[key]:
 					print( "Build dependencies {} {} ({}-{})-> {}".format( key, port.version, self.repo.hashPosition( port.firstCommit ), self.repo.hashPosition( port.lastCommit ), port.dependenciesNames ) ) 
 					for dep in port.dependenciesNames:
-						if len(dep) > 0:
+						if dep:
 							depName = dep.split( "," )[0].split()[0]
 							if depName in self.ports:
 								depPort = self.findNewerPortBeforeOrAtHash( depName, port.firstCommit )
@@ -160,8 +164,11 @@ class PortsDB:
 	def connect( self, fileName ):
 		self.db = sqlite3.connect( fileName )
 
+	# Creates and stores and in memory DB (after an import) into a new SQLite DB
+	# No incremental updates are possible right now
 	def store( self, fileName ):
 		self.db = sqlite3.connect( fileName )
+		cursor = self.db.cursor()
 
 		q = """	CREATE TABLE IF NOT EXISTS port (
 					id TEXT NOT NULL,
@@ -173,7 +180,6 @@ class PortsDB:
 					PRIMARY KEY( id, version )
 				)
 			"""
-		cursor = self.db.cursor()
 		cursor.execute( q )
 
 		q = """	CREATE TABLE IF NOT EXISTS dependencies (
@@ -184,6 +190,19 @@ class PortsDB:
 				)
 			"""
 		cursor.execute( q )
+
+		q = """	CREATE INDEX idx_id_version ON dependencies (id, version)
+			"""
+		cursor.execute( q )
+
+		q = """	CREATE TABLE IF NOT EXISTS commits (
+					hash TEXT NOT NULL,
+					pos INTEGER NOT NULL,
+					PRIMARY KEY( hash )
+				)
+			"""
+		cursor.execute( q )
+
 		self.db.commit()
 
 		for key in self.ports:
@@ -200,6 +219,13 @@ class PortsDB:
 				
 				self.db.commit()
 		
+		for commit in self.repo.hashes:
+			q = """ INSERT INTO commits ( hash, pos )
+					VALUES ( ?, ? )
+				"""
+			cursor.execute( q, ( commit, self.repo.hashes[commit] ) )
+		self.db.commit()
+
 		self.db.close()
 	
 	def packagesLike( self, pckLike ):

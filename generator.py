@@ -1,3 +1,8 @@
+# Generates port files for a library at a given version
+# Use:
+# --pkg to set the port name (as the port folder name)
+# 
+
 import argparse
 import os
 from pathlib import Path
@@ -24,31 +29,35 @@ def executePlan( db, destination, plan ):
 				shutil.rmtree( os.path.join( destination, portFolder ) )
 			shutil.copytree( os.path.join( originPorts, portFolder ), os.path.join( destination, portFolder ) )
 
+# Copies the selected port file (for a version, with all the dependencies) into a vcpkg local installation
+#
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser( description='Generate ports folder for a package.' )
-	parser.add_argument( "--pkg", dest="pkg", help="Package to read, requires a version.")
-	parser.add_argument( "--pkg-version", dest="pkgVersion", help="Package version to read")
+	parser.add_argument( "--pkg", dest="pkg", help="Package to read, requires a version in the format name/version. For example zlib/1.2.11-1")
 	parser.add_argument( "--db", dest="db", help="SQLite file with ports information")
 	parser.add_argument( "--destination", dest="destination", help="Destination ports folder")
-	parser.add_argument( "--repository", dest="repository", help="folder with a vcpkg cloned repository at master")
+	parser.add_argument( "--repository", dest="repository", help="Folder with a vcpkg cloned repository at master from where we will read the port file")
 
 	args = parser.parse_args()
-	if args.db and args.pkg and args.repository:
-		repository = PortsRepo( args.repository )
-		db = PortsDB( repository )
-		db.connect( args.db )
+	if args.db and args.pkg and args.repository and args.destination:
+		pkgFolderAndVersion = args.pkg.split( "/" )
+		if len( pkgFolderAndVersion ) == 2:
+			pkgFolder = pkgFolderAndVersion[0]
+			pkgVersion = pkgFolderAndVersion[1]
 
-		if args.pkgVersion:
-			port = db.port( args.pkg, args.pkgVersion )
-			if args.destination:
-				plan = {}
-				generatePlan( db, port, args.destination, plan )
+			repository = PortsRepo( args.repository )
+			db = PortsDB( repository )
+			db.connect( args.db )
+
+			port = db.port( pkgFolder, pkgVersion )
+			plan = {}
+			generatePlan( db, port, args.destination, plan )
+			if plan:
 				executePlan( db, args.destination, plan )
 			else:
-				print( port )
+				print( "Nothing to execute" )
 		else:
-			for v in db.versions( args.pkg ):
-				port = db.port( args.pkg, v )
-				print( port )
+			print( "Wrong package parameter" )
+			parser.print_help()
 	else:
 		parser.print_help()

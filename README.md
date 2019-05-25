@@ -24,10 +24,10 @@ Look for packages by name.
 Look for a package using a version:
 
 ```shell
-python query.py --db $HOME/tmp/repo.db --pkg boost --pkg-version 1.67.0
+python query.py --db $HOME/tmp/repo.db --pkg boost/1.67.0
 ```
 
-Look for packages with a string in the name
+Look for packages with a similar name (using the LIKE operator)
 
 ```shell
 python query.py --db $HOME/tmp/repo.db --pkg json --like
@@ -44,5 +44,5 @@ cd $HOME
 rm -rf vcpkg
 git clone https://github.com/microsoft/vcpkg.git
 rm -rf vcpkg/ports
-python generator.py --repository $HOME/tmp/vcpkg --db $HOME/tmp/repo.db --destination $HOME/vcpkg/ports --pkg opencv --pkg-version 3.4.3-3
+python generator.py --repository $HOME/tmp/vcpkg --db $HOME/tmp/repo.db --destination $HOME/vcpkg/ports --pkg opencv/3.4.3-3
 ```
