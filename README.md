@@ -1,6 +1,6 @@
 # vcpck-versions
 
-Utilities to work with selected versions of port files.
+Utilities to work with selected versions of port files. More information in this [blog post](http://www.antiteum.com/2019/05/vcpkg-versioning.html).
 
 ## Importer
 
