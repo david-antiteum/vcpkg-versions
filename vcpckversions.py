@@ -18,8 +18,8 @@ class PortsRepo:
 	# git checkout -f
 	def checkout( self, commit ):
 		try:
-			print("git checkout %s" % commit )
-			subprocess.run(['git', 'checkout', '-f', commit], cwd=self.folder,shell=True, check=True)
+			print("in %s git checkout -f %s" % (self.folder,commit))
+			subprocess.run(['git', 'checkout', '-f', commit], cwd=self.folder, check=True)
 		except subprocess.CalledProcessError:
 			print("git checkout failed!")
 			return False
