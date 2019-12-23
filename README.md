@@ -1,4 +1,4 @@
-# vcpck-versions
+# vcpkg-versions
 
 Utilities to work with selected versions of port files. More information in this [blog post](http://www.antiteum.com/2019/05/vcpkg-versioning.html).
 
@@ -9,8 +9,8 @@ This utility read all commits in the repository to discover the ports and all th
 Example of usage:
 
 ```shell
-cd $HOME
-mkdir -p tmp
+mkdir -p $HOME/tmp
+cd $HOME/tmp
 git clone https://github.com/microsoft/vcpkg.git
 python importer.py --repository $HOME/tmp/vcpkg --db $HOME/tmp/repo.db
 ```
